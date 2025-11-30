@@ -1,3 +1,5 @@
+import 'dart:isolate';
+import 'dart:developer' as logger;
 import 'package:flutter/material.dart';
 
 void main(List<String> args) {
@@ -39,11 +41,20 @@ class HomeScreen extends StatelessWidget {
             Image.asset('assets/animation.gif'),
             ElevatedButton(
               onPressed: () {
-                print(computeHeavyTask());
+                print(computeHeavyTask1());
               },
               child: Text("Task1"),
             ),
-            ElevatedButton(onPressed: () {}, child: Text("Task2")),
+            ElevatedButton(
+              onPressed: () async {
+                ReceivePort receivePort = ReceivePort();
+                await Isolate.spawn(computeHeavyTask, receivePort.sendPort);
+                receivePort.listen((result) {
+                  logger.log(result.toString());
+                });
+              },
+              child: Text("Task2"),
+            ),
           ],
         ),
       ),
@@ -51,11 +62,18 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-computeHeavyTask() {
-  late int result;
-  for (int i = 0; i < 10000000000; i++) {
+computeHeavyTask1() {
+  int result = 0;
+  for (int i = 0; i < 1000000000; i++) {
     result = i;
   }
-  ;
   return result;
+}
+
+computeHeavyTask(SendPort sendPort) {
+  int result = 0;
+  for (int i = 0; i < 1000000000; i++) {
+    result = i;
+  }
+  sendPort.send(result);
 }
